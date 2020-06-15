@@ -1,0 +1,68 @@
+version: "3.8"
+x-logging: &default-logging
+  options:
+    max-size: '10m'
+    max-file: '1'
+  driver: json-file
+services:
+  portainer:
+    image: portainer/portainer:latest
+    container_name: portainer
+    restart: on-failure
+    ports:
+      - "9001:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/volumes/portainer:/data
+    logging: *default-logging
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    command: mysqld --sql_mode='NO_ENGINE_SUBSTITUTION'
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "3306:3306"
+    volumes:
+      - /var/volumes/mysql:/var/lib/mysql
+    logging: *default-logging
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    volumes:
+      - /var/volumes/postgres:/var/lib/postgresql
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    logging: *default-logging
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    command: >
+      sh -c "mongod --bind_ip_all --profile 1 --slowms 60000 --slowOpSampleRate 1.0"
+    restart: on-failure
+    volumes:
+      - /var/volumes/mongodb:/data/db
+    logging: *default-logging
+  redis:
+    image: "redis:latest"
+    container_name: redis
+    ports:
+      - "6379"
+    logging: *default-logging
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
+    env_file:
+      - .env
+    ports:
+      - "15672"
+      - "5672"
+    logging: *default-logging
+
+networks:
+  default:
+    name: services
+    driver: bridge
